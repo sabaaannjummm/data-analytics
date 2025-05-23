@@ -1,0 +1,9 @@
+These can be shown under each chart or as tooltips to enhance understanding: 📊 1. Survival Count by Passenger Class Caption: This bar chart compares the number of passengers who survived and died across the three ticket classes (1st, 2nd, and 3rd class). It highlights survival disparities by socio-economic status
+📊 2. Age Distribution Caption: This histogram shows the distribution of passenger ages. It helps identify the most common age ranges and highlights the presence of children, adults, and elderly passengers on board.
+📊 3. Fare vs Age by Survival Caption: This scatter plot maps each passenger’s fare and age, color-coded by survival. It helps explore whether younger or wealthier passengers had higher survival chances.
+📊 4. Survival by Embarkation Port Caption: This bar chart shows the number of survivors and non-survivors by embarkation port (C = Cherbourg, Q = Queenstown, S = Southampton). It may reflect demographic and travel-class differences between locations.
+📊 5. Survival by Gender Caption: This chart reveals survival patterns based on gender. It reflects the “women and children first” policy during the evacuation of the Titanic.
+
+titanic.json
+
+titanic.csv
