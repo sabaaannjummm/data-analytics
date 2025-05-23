@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CSV Data Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #e0f7fa, #b2ebf2);
+      margin: 2rem;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    input[type="file"] {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      color: #333;
+    }
+    .chart {
+      width: 80%;
+      max-width: 1200px;
+      margin: 20px 0;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      backdrop-filter: blur(15px);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    h1 {
+      color: #004d40;
+      text-shadow: 1px 1px 2px #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Glassmorphism CSV Data Dashboard</h1>
+  <input type="file" id="upload" accept=".csv">
+  <div id="class-survival" class="chart"></div>
+  <div id="age-distribution" class="chart"></div>
+  <div id="fare-survival" class="chart"></div>
+  <div id="embarked-survival" class="chart"></div>
+  <div id="gender-survival" class="chart"></div>
+
+  <script>
+    document.getElementById('upload').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      Papa.parse(file, {
+        header: true,
+        dynamicTyping: true,
+        complete: function (results) {
+          const data = results.data.filter(row => Object.keys(row).length > 1);
+          renderDashboard(data);
+        }
+      });
+    });
+
+    function renderDashboard(data) {
+      const groupBy = (arr, key) =>
+        arr.reduce((acc, item) => {
+          const val = item[key] || 'Unknown';
+          acc[val] = acc[val] || [];
+          acc[val].push(item);
+          return acc;
+        }, {});
+
+      const classGroups = groupBy(data, 'Pclass');
+      const pclasses = Object.keys(classGroups).sort();
+      const survived = pclasses.map(cls => classGroups[cls].filter(p => p.Survived == 1).length);
+      const died = pclasses.map(cls => classGroups[cls].filter(p => p.Survived == 0).length);
+
+      Plotly.newPlot('class-survival', [
+        { x: pclasses, y: survived, name: 'Survived', type: 'bar' },
+        { x: pclasses, y: died, name: 'Died', type: 'bar' }
+      ], {
+        barmode: 'group',
+        title: 'Survival Count by Passenger Class',
+        xaxis: { title: 'Class' },
+        yaxis: { title: 'Count' }
+      });
+
+      const ages = data.map(p => p.Age).filter(a => a !== null && !isNaN(a));
+      Plotly.newPlot('age-distribution', [{
+        x: ages,
+        type: 'histogram',
+        nbinsx: 30
+      }], {
+        title: 'Age Distribution',
+        xaxis: { title: 'Age' },
+        yaxis: { title: 'Number of Passengers' }
+      });
+
+      const fares = data.filter(p => p.Fare && p.Age && !isNaN(p.Fare) && !isNaN(p.Age));
+      const survivedFares = fares.filter(p => p.Survived == 1);
+      const diedFares = fares.filter(p => p.Survived == 0);
+
+      Plotly.newPlot('fare-survival', [
+        {
+          x: survivedFares.map(p => p.Fare),
+          y: survivedFares.map(p => p.Age),
+          mode: 'markers',
+          name: 'Survived',
+          type: 'scatter'
+        },
+        {
+          x: diedFares.map(p => p.Fare),
+          y: diedFares.map(p => p.Age),
+          mode: 'markers',
+          name: 'Died',
+          type: 'scatter'
+        }
+      ], {
+        title: 'Fare vs Age by Survival',
+        xaxis: { title: 'Fare' },
+        yaxis: { title: 'Age' }
+      });
+
+      const embarkGroups = groupBy(data, 'Embarked');
+      const ports = Object.keys(embarkGroups).sort();
+      const survivedPort = ports.map(port => embarkGroups[port].filter(p => p.Survived == 1).length);
+      const diedPort = ports.map(port => embarkGroups[port].filter(p => p.Survived == 0).length);
+
+      Plotly.newPlot('embarked-survival', [
+        { x: ports, y: survivedPort, name: 'Survived', type: 'bar' },
+        { x: ports, y: diedPort, name: 'Died', type: 'bar' }
+      ], {
+        barmode: 'group',
+        title: 'Survival by Embarkation Port',
+        xaxis: { title: 'Port' },
+        yaxis: { title: 'Count' }
+      });
+
+      const genderGroups = groupBy(data, 'Sex');
+      const genders = Object.keys(genderGroups);
+      const survivedGender = genders.map(g => genderGroups[g].filter(p => p.Survived == 1).length);
+      const diedGender = genders.map(g => genderGroups[g].filter(p => p.Survived == 0).length);
+
+      Plotly.newPlot('gender-survival', [
+        { x: genders, y: survivedGender, name: 'Survived', type: 'bar' },
+        { x: genders, y: diedGender, name: 'Died', type: 'bar' }
+      ], {
+        barmode: 'group',
+        title: 'Survival by Gender',
+        xaxis: { title: 'Gender' },
+        yaxis: { title: 'Count' }
+      });
+    }
+  </script>
+</body>
+</html>
